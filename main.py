@@ -31,7 +31,7 @@ device = torch.device('cuda' if use_cuda else 'cpu')
 
 def parse_args():
     parser = argparse.ArgumentParser('PaDiM')
-    parser.add_argument('--data_path', type=str, default='D:/dataset/mvtec_anomaly_detection')
+    parser.add_argument('--data_path', type=str, default='/home/kalyanav/Playground/AnomalyDetection/mvtec_dataet')
     parser.add_argument('--save_path', type=str, default='./mvtec_result')
     parser.add_argument('--arch', type=str, choices=['resnet18', 'wide_resnet50_2'], default='wide_resnet50_2')
     return parser.parse_args()
@@ -61,7 +61,25 @@ def main():
 
     # set model's intermediate outputs
     outputs = []
+    """
+    A forward hook is a function that is called during the forward pass of a neural network module. It allows you to access and record intermediate 
+    outputs or perform additional operations on the inputs or outputs of specific layers.
 
+    In this code snippet, three forward hooks are registered to three specific layers 
+    (layer1[-1], layer2[-1], and layer3[-1]) of a PyTorch model (model). The [-1] index 
+    indicates the last layer of each respective layer group.
+
+    When the forward pass reaches each of these layers, the hook function will be called with 
+    three arguments: module, input, and output. The module argument refers to the layer itself, 
+    input represents the input tensor to the layer, and output represents the output tensor of the layer.
+
+    Inside the hook function, the output tensor is appended to the outputs list. It assumes 
+    that an empty list called outputs exists outside this code snippet, which is used to store 
+    the intermediate outputs of the specified layers.
+
+    By registering these forward hooks, you can capture and analyze the intermediate outputs of 
+    the specified layers during the forward pass of the model.
+    """
     def hook(module, input, output):
         outputs.append(output)
 
@@ -83,7 +101,7 @@ def main():
         train_dataloader = DataLoader(train_dataset, batch_size=32, pin_memory=True)
         test_dataset = mvtec.MVTecDataset(args.data_path, class_name=class_name, is_train=False)
         test_dataloader = DataLoader(test_dataset, batch_size=32, pin_memory=True)
-
+        
         train_outputs = OrderedDict([('layer1', []), ('layer2', []), ('layer3', [])])
         test_outputs = OrderedDict([('layer1', []), ('layer2', []), ('layer3', [])])
 
@@ -93,32 +111,36 @@ def main():
             for (x, _, _) in tqdm(train_dataloader, '| feature extraction | train | %s |' % class_name):
                 # model prediction
                 with torch.no_grad():
-                    _ = model(x.to(device))
+                    _ = model(x.to(device)) #shape of x is (batch size, c, h, w)
+                # here x is the train images
                 # get intermediate layer outputs
                 for k, v in zip(train_outputs.keys(), outputs):
                     train_outputs[k].append(v.cpu().detach())
                 # initialize hook outputs
                 outputs = []
             for k, v in train_outputs.items():
-                train_outputs[k] = torch.cat(v, 0)
-
+                # here v is the outputs of each layer. They will be of length of dataloader
+                train_outputs[k] = torch.cat(v, 0) #concatenates across 0th dimension
+                # [32, 256, 56, 56] --> [209, 256, 56, 56]
+            
             # Embedding concat
             embedding_vectors = train_outputs['layer1']
             for layer_name in ['layer2', 'layer3']:
                 embedding_vectors = embedding_concat(embedding_vectors, train_outputs[layer_name])
-
+            
             # randomly select d dimension
             embedding_vectors = torch.index_select(embedding_vectors, 1, idx)
             # calculate multivariate Gaussian distribution
             B, C, H, W = embedding_vectors.size()
             embedding_vectors = embedding_vectors.view(B, C, H * W)
-            mean = torch.mean(embedding_vectors, dim=0).numpy()
-            cov = torch.zeros(C, C, H * W).numpy()
-            I = np.identity(C)
+            mean = torch.mean(embedding_vectors, dim=0).numpy() #mean
+            cov = torch.zeros(C, C, H * W).numpy() # covariance matrix initialization
+            I = np.identity(C) # identity matrix
             for i in range(H * W):
                 # cov[:, :, i] = LedoitWolf().fit(embedding_vectors[:, :, i].numpy()).covariance_
                 cov[:, :, i] = np.cov(embedding_vectors[:, :, i].numpy(), rowvar=False) + 0.01 * I
             # save learned distribution
+            
             train_outputs = [mean, cov]
             with open(train_feature_filepath, 'wb') as f:
                 pickle.dump(train_outputs, f)
@@ -164,8 +186,8 @@ def main():
             conv_inv = np.linalg.inv(train_outputs[1][:, :, i])
             dist = [mahalanobis(sample[:, i], mean, conv_inv) for sample in embedding_vectors]
             dist_list.append(dist)
-
-        dist_list = np.array(dist_list).transpose(1, 0).reshape(B, H, W)
+        
+        dist_list = np.array(dist_list).transpose(1, 0).reshape(B, H, W) #83, 56, 56
 
         # upsample
         dist_list = torch.tensor(dist_list)
@@ -175,7 +197,7 @@ def main():
         # apply gaussian smoothing on the score map
         for i in range(score_map.shape[0]):
             score_map[i] = gaussian_filter(score_map[i], sigma=4)
-        
+        import pdb; pdb.set_trace()
         # Normalization
         max_score = score_map.max()
         min_score = score_map.min()
@@ -284,10 +306,16 @@ def denormalization(x):
 
 
 def embedding_concat(x, y):
+    """
+    The purpose of the embedding_concat function appears to be concatenating two tensors 
+    (x and y) along the channel dimension and transforming their spatial dimensions using 
+    unfolding and folding operations. 
+    """
+    
     B, C1, H1, W1 = x.size()
     _, C2, H2, W2 = y.size()
-    s = int(H1 / H2)
-    x = F.unfold(x, kernel_size=s, dilation=1, stride=s)
+    s = int(H1 / H2) # calculation of stride 
+    x = F.unfold(x, kernel_size=s, dilation=1, stride=s) #This operation essentially converts each H2 x W2 patch in x into a column in the output.
     x = x.view(B, C1, -1, H2, W2)
     z = torch.zeros(B, C1 + C2, x.size(2), H2, W2)
     for i in range(x.size(2)):
