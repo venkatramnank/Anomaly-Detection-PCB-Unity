@@ -49,11 +49,12 @@ python inference_test.py -d data_path -s save_path_where_the_pkl_folder_exists
 ## Tests
 
 #### Inference time
+The inference times recorded for 35 test cases of PCB anomaly images
 
 |    Machine    |      CPU      |     GPU      |     Time(in seconds)      |
 | ------------- | ------------- | ------------ | -----------------------   |
-| Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  |
+| GPU_machine_1  |  i9  |  RTX 12 GB | 0.2047 |
+| Personal  | i5  | None | 2.43 |
 
 ## Reference
 [1] Thomas Defard, Aleksandr Setkov, Angelique Loesch, Romaric Audigier. *PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization*. https://arxiv.org/pdf/2011.08785
