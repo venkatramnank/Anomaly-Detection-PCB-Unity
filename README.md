@@ -51,7 +51,7 @@ python inference_test.py -d data_path -s save_path_where_the_pkl_folder_exists
 #### Inference time
 
 |    Machine    |      CPU      |     GPU      |     Time(in seconds)      |
-| ------------- | ------------- |
+| ------------- | ------------- | ------------ | -----------------------   |
 | Content Cell  | Content Cell  |
 | Content Cell  | Content Cell  |
 
