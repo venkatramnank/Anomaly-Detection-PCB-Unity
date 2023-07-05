@@ -16,12 +16,32 @@ For initial testing , the  MVTec AD datasets : Download from [MVTec website](htt
 
 Custom PCB data created using Unity.
 
-## Running 
+## Training 
 
 In order to train the Efficient net model
 ```python
  python efficient_main.py -d [dataset location] -s [results storage directory] --training 
  ```
+
+ ## Inference
+
+ Create a folder inside the directory called model_pkl_efficientnet-b4. The b4 here refers to the model architecture used, thus needs to be replaced of the following format
+ ```
+model_pkl_<model name>
+ ```
+
+Place the trained model inside the folder. The model trianed for the PCB can be found here.
+
+One can also use gdown to download the pkl file.
+```
+$ pip install gdown
+$ gdown --fuzzy "link to the google drive file"
+```
+
+Then run the inference code :
+```python
+python inference_test.py -d data_path -s save_path_where_the_pkl_folder_exists
+```
 
 ## Reference
 [1] Thomas Defard, Aleksandr Setkov, Angelique Loesch, Romaric Audigier. *PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization*. https://arxiv.org/pdf/2011.08785
