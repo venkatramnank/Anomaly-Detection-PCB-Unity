@@ -6,6 +6,7 @@ This code is heavily borrowed from the unofficial implementation by [xiahaifeng1
 ## Requirements
 * python >= 3.7
 * pytorch >= 1.5
+* torchvision
 * tqdm
 * sklearn
 * matplotlib
