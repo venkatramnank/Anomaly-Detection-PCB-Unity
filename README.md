@@ -9,6 +9,7 @@ This code is heavily borrowed from the unofficial implementation by [xiahaifeng1
 * tqdm
 * sklearn
 * matplotlib
+* scikit-image
 * [EfficientNet-PyTorch](https://github.com/lukemelas/EfficientNet-PyTorch)
 
 ## Datasets
