@@ -46,6 +46,15 @@ Then run the inference code :
 python inference_test.py -d data_path -s save_path_where_the_pkl_folder_exists
 ```
 
+## Tests
+
+#### Inference time
+
+|    Machine    |      CPU      |     GPU      |     Time(in seconds)      |
+| ------------- | ------------- |
+| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  |
+
 ## Reference
 [1] Thomas Defard, Aleksandr Setkov, Angelique Loesch, Romaric Audigier. *PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization*. https://arxiv.org/pdf/2011.08785
 
