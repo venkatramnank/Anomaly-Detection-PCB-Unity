@@ -30,7 +30,7 @@ In order to train the Efficient net model
 model_pkl_<model name>
  ```
 
-Place the trained model inside the folder. The model trianed for the PCB can be found here.
+Place the trained model inside the folder. The model trianed for the PCB can be found [here](https://drive.google.com/file/d/1h28jrUBAWC0qK6xuzVMcmFyPKlIyZUKM/view?usp=sharing). 
 
 One can also use gdown to download the pkl file.
 ```
