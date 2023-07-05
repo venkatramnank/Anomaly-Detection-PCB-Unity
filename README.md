@@ -7,6 +7,7 @@ This code is heavily borrowed from the unofficial implementation by [xiahaifeng1
 * python >= 3.7
 * pytorch >= 1.5
 * torchvision
+* pillow==9.5.0
 * tqdm
 * sklearn
 * matplotlib
