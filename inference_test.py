@@ -27,6 +27,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from torchvision import transforms as T
+from PIL import Image, ImageOps
 
 ## eff model
 from efficient_modified import EfficientNetModified
@@ -48,6 +50,7 @@ device = torch.device('cuda' if use_cuda else 'cpu')
 def parse_args():
     parser = argparse.ArgumentParser('Padim inference parameters')
     parser.add_argument('-d', '--data_path', type=str, required=True, help='Test data location for inference')
+    # parser.add_argument('-t', '--test_data_path', type=str, required=True, help='Test single image location')
     parser.add_argument('-s', '--save_path', type=str, required=True, help='inference model & data location')
     parser.add_argument('-a', '--arch', type=str, choices=['b0', 'b1', 'b4', 'b7'], default='b4')
     parser.add_argument('-b', '--batch_size', type=int, default=32)
@@ -315,7 +318,7 @@ def main():
         threshold = PIXEL_THR
         # label, mask two types threshold 
         print('label based threshold: {:.3f}, pixel based threshold: {:.3f}'.format(img_threshold, threshold))
-
+        import pdb; pdb.set_trace()
         # calculate per-pixel level ROCAUC
         # fpr, tpr, _ = roc_curve(gt_mask.flatten(), scores.flatten())
         # per_pixel_rocauc = roc_auc_score(gt_mask.flatten(), scores.flatten())
@@ -343,15 +346,122 @@ def main():
     # fig.savefig(os.path.join(args.save_path, '%s_lst_roc_curve.png' % name), dpi=100)
 
 
+def single_image_inference(test_img, class_name='pcb'):
+    if args.arch == 'b0':
+        block_num = torch.tensor([3, 5, 11]) # b0 
+        filters = (24 + 40 + 112) # 176
+    elif args.arch == 'b1':
+        # block_num = torch.tensor([3, 6, 9]) # b1 first, 24 + 40 + 80
+        # block_num = torch.tensor([4, 7, 13]) # b1 medium 24 + 40 + 112
+        block_num = torch.tensor([5, 8, 16]) # b1 last 24 + 40 + 112
+        filters = (24 + 40 + 112) # 176
+    elif args.arch == 'b4':
+        # block_num = torch.tensor([3, 7, 11]) # b4 (32 + 56 + 112)
+        block_num = torch.tensor([3, 7, 17]) # b4 (32 + 56 + 160)
+        # block_num = torch.tensor([5, 9, 13]) # (32 + 56 + 112)
+        # block_num = torch.tensor([5, 9, 20]) # b4 (32 + 56 + 160)
+        # block_num = torch.tensor([6, 10, 22]) # b4 (32 + 56 + 160)
+        filters = (32 + 56 + 160) # 248
+    elif args.arch == 'b7':
+        block_num = torch.tensor([11, 18, 38]) # b7 (48 + 80 + 224) # last
+        # block_num = torch.tensor([5, 12, 29]) # b7 (48 + 80 + 224) # first
+        # block_num = torch.tensor([8, 15, 33]) # medium
+        filters = (48 + 80 + 224) # 352
+
+
+    train_outputs = OrderedDict([('layer1', []), ('layer2', []), ('layer3', [])])
+    test_outputs = OrderedDict([('layer1', []), ('layer2', []), ('layer3', [])])
+    
+    # Loading model into CUDA
+    eff_model.to(device)
+
+    # pkl file
+    train_feature_filepath = os.path.join(args.save_path, 'model_pkl_%s' % name, 'train_%s.pkl' % class_name)
+
+    # Loading pretrained model
+    if not os.path.exists(train_feature_filepath):
+            print('train set feature file not exists: {}'.format(train_feature_filepath))
+    else:
+        print('load train set feat file from %s' % train_feature_filepath)
+        with open(train_feature_filepath, 'rb') as f:
+            train_outputs = pickle.load(f)
+
+    # Setting to eval mode
+    eff_model.eval()
+
+    # applying transforms as given in the dataset builder 
+    resize = 256
+    cropsize = 224
+    
+    x = Image.open(test_img).convert('RGB')
+    test_imgs = []
+    
+    #TODO: Need to find the mean and std across all over again
+    transform_x = T.Compose([T.Resize(resize, Image.ANTIALIAS),
+                                      T.CenterCrop(cropsize),
+                                      T.ToTensor(),
+                                      T.Normalize(mean=[0.485, 0.456, 0.406],
+                                                  std=[0.229, 0.224, 0.225])])
+    x = transform_x(x)
+    test_imgs.append(x.cpu().detach().numpy())
+
+    x = x.unsqueeze(0)
+    with torch.no_grad():
+                feats = eff_model.extract_features(x.to(device), block_num.to(device))
+
+    for k, v in zip(test_outputs.keys(), feats):
+        test_outputs[k].append(v.cpu().detach())
+    
+    for k, v in test_outputs.items():
+        test_outputs[k] = torch.cat(v, 0)
+
+    embedding_vectors = test_outputs['layer1']
+    for layer_name in ['layer2', 'layer3']:
+        embedding_vectors = embedding_concat(embedding_vectors, test_outputs[layer_name])
+    
+    inference_start = time.time()
+    B, C, H, W = embedding_vectors.size()
+    embedding_vectors = embedding_vectors.view(B, C, H * W).to(device)
+    mean = torch.Tensor(train_outputs[0]).to(device)
+    cov_inv = torch.Tensor(train_outputs[1]).to(device)
+
+    dist_list = torch.zeros(size=(H*W, B))
+    for i in range(H*W):
+        delta = embedding_vectors[:, :, i] - mean[:, i]
+        m_dist = torch.sqrt(torch.diag(torch.mm(torch.mm(delta, cov_inv[:, :, i]), delta.t())))
+        dist_list[i] = m_dist
+
+    dist_list = dist_list.transpose(1, 0).view(B, H, W)
+    score_map = F.interpolate(dist_list.unsqueeze(1), size=x.size(2), mode='bilinear', align_corners=False).squeeze().cpu().numpy()
+
+    for i in range(score_map.shape[0]):
+        score_map[i] = gaussian_filter(score_map[i], sigma=4)
+
+    inference_time = time.time() - inference_start
+    print('{} inference time: {:.3f}'.format(class_name, inference_time))
+
+    # Normalization
+    max_score = score_map.max()
+    min_score = score_map.min()
+    scores = (score_map - min_score) / (max_score - min_score)
+    scores = np.expand_dims(scores, 0)
+    #NOTE: These thresholds must be update for the next runs
+    img_threshold = LABEL_THR
+    threshold = PIXEL_THR
+
+    save_dir = args.save_path + '/' + f'pictures_efficientnet_single_testing_-{args.arch}'
+    os.makedirs(save_dir, exist_ok=True)
+    plot_fig(test_imgs, scores, threshold, save_dir, class_name)
+
 
 if __name__ == '__main__':
     args = parse_args()
     name = 'efficientnet-{}'.format(args.arch)
     eff_model = EfficientNetModified.from_pretrained(name)
 
-
+    single_image_inference(test_img=args.test_data_path, class_name='pcb')
     #show_feat_list(eff_model)
-    main()
+    # main()
     # print(dir(eff_model))
 
     # test code

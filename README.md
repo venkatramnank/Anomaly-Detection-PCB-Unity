@@ -40,7 +40,7 @@ $ gdown --fuzzy "link to the google drive file"
 
 Then run the inference code :
 ```python
-python inference_test.py -d data_path -s save_path_where_the_pkl_folder_exists
+python inference_test.py -t data_path_of_single_test_image -s save_path_where_the_pkl_folder_exists_and_where_results_are_stored
 ```
 
 ## Reference
