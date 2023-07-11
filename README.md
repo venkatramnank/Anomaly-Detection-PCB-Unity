@@ -6,9 +6,12 @@ This code is heavily borrowed from the unofficial implementation by [xiahaifeng1
 ## Requirements
 * python >= 3.7
 * pytorch >= 1.5
+* torchvision
+* pillow==9.5.0
 * tqdm
 * sklearn
 * matplotlib
+* scikit-image
 * [EfficientNet-PyTorch](https://github.com/lukemelas/EfficientNet-PyTorch)
 
 ## Datasets
@@ -30,7 +33,7 @@ In order to train the Efficient net model
 model_pkl_<model name>
  ```
 
-Place the trained model inside the folder. The model trianed for the PCB can be found here.
+Place the trained model inside the folder. The model trianed for the PCB can be found [here](https://drive.google.com/file/d/1h28jrUBAWC0qK6xuzVMcmFyPKlIyZUKM/view?usp=sharing). 
 
 One can also use gdown to download the pkl file.
 ```
@@ -42,6 +45,16 @@ Then run the inference code :
 ```python
 python inference_test.py -t data_path_of_single_test_image -s save_path_where_the_pkl_folder_exists_and_where_results_are_stored
 ```
+
+## Tests
+
+#### Inference time
+The inference times recorded for 35 test cases of PCB anomaly images
+
+|    Machine    |      CPU      |     GPU      |     Time(in seconds)      |
+| ------------- | ------------- | ------------ | -----------------------   |
+| GPU_machine_1  |  i9  |  RTX 12 GB | 0.2047 |
+| Personal  | i5  | None | 2.43 |
 
 ## Reference
 [1] Thomas Defard, Aleksandr Setkov, Angelique Loesch, Romaric Audigier. *PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization*. https://arxiv.org/pdf/2011.08785
