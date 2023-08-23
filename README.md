@@ -159,7 +159,7 @@ Inference
 
 ## In depth code documentation
 
-In depth code documentation is available here : 
+In depth code documentation is available here : [In Depth Code Doc](https://github.com/venkatramnank/Anomaly-Detection-PCB-Unity/blob/main/Anomaly%20Detection%20For%20PCB%20(Code%20documetation).md)
 
 ## Reference
 [1] Thomas Defard, Aleksandr Setkov, Angelique Loesch, Romaric Audigier. *PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization*. https://arxiv.org/pdf/2011.08785
