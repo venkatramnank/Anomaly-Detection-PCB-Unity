@@ -104,11 +104,11 @@ The inference times recorded for 35 test cases of PCB anomaly images
 
 Training 
 
-![training]()
+![training](https://github.com/venkatramnank/Anomaly-Detection-PCB-Unity/blob/main/imgs/training.png)
 
 Inference
 
-![inference]()
+![inference](https://github.com/venkatramnank/Anomaly-Detection-PCB-Unity/blob/main/imgs/inference.png)
 
 ## Reference
 [1] Thomas Defard, Aleksandr Setkov, Angelique Loesch, Romaric Audigier. *PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization*. https://arxiv.org/pdf/2011.08785
