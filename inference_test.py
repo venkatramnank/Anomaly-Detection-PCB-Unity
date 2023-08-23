@@ -49,8 +49,8 @@ device = torch.device('cuda' if use_cuda else 'cpu')
 
 def parse_args():
     parser = argparse.ArgumentParser('Padim inference parameters')
-    parser.add_argument('-d', '--data_path', type=str, required=True, help='Test data location for inference')
-    # parser.add_argument('-t', '--test_data_path', type=str, required=True, help='Test single image location')
+    # parser.add_argument('-d', '--data_path', type=str, required=True, help='Test data location for inference')
+    parser.add_argument('-t', '--test_data_path', type=str, required=True, help='Test single image location')
     parser.add_argument('-s', '--save_path', type=str, required=True, help='inference model & data location')
     parser.add_argument('-a', '--arch', type=str, choices=['b0', 'b1', 'b4', 'b7'], default='b4')
     parser.add_argument('-b', '--batch_size', type=int, default=32)

@@ -17,7 +17,51 @@ This code is heavily borrowed from the unofficial implementation by [xiahaifeng1
 ## Datasets
 For initial testing , the  MVTec AD datasets : Download from [MVTec website](https://www.mvtec.com/company/research/datasets/mvtec-ad/) is used. 
 
-Custom PCB data created using Unity.
+Custom PCB data created using Unity. The tree structure required for running training:
+```bash
+.
+├── ground_truth
+│   ├── misplaced_objects
+│   │   ├── step0.camera_solo_1_mask.png
+│   │   ├── step0.camera_solo_2_mask.png
+│   │   ├── step0.camera_solo_3_mask.png
+│   │   ├── step0.camera_solo_4_mask.png
+│   │   ├── step0.camera_solo_5_mask.png
+│   │   ├── step0.camera_solo_6_mask.png
+│   │   ├── step0.camera_solo_7_mask.png
+│   │   └── step0.camera_solo_mask.png
+│   └── missing_objects
+│       ├── step0.camera_solo_1_mask.png
+│       ├── step0.camera_solo_2_mask.png
+│       ├── step0.camera_solo_3_mask.png
+│       └── step0.camera_solo_mask.png
+├── test
+│   ├── good
+│   │   ├── step0.camera_solo.png
+│   │   ├── step0.camera_solo_1.png
+│   │   ├── step1.camera_solo.png
+│   │   └── step1.camera_solo_1.png
+│   ├── misplaced_objects
+│   │   ├── step0.camera_solo.png
+│   │   ├── step0.camera_solo_1.png
+│   │   ├── step0.camera_solo_2.png
+│   │   .
+    │   .
+│   └── missing_objects
+│       ├── step0.camera_solo.png
+│       ├── step0.camera_solo_1.png
+│       .
+        .
+└── train
+    └── good
+        ├── step0.camera_solo.png
+        ├── step0.camera_solo_1.png
+        ├── step0.camera_solo_3.png
+        ├── step0.camera_solo_4.png
+        .
+        .
+
+```
 
 ## Training 
 

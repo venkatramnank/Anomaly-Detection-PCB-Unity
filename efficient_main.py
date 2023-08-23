@@ -64,6 +64,15 @@ def create_seed(filters):
         torch.cuda.manual_seed_all(args.seed)
 
 def embedding_concat(x, y):
+    """Concatenate embeddings from layers
+
+    Args:
+        x (tensor): First embedding tensor
+        y (tensor): Second embedding tensor
+
+    Returns:
+        tensor: Concatenated torch tensor
+    """
     B, C1, H1, W1 = x.size()
     _, C2, H2, W2 = y.size()
 
@@ -80,12 +89,26 @@ def embedding_concat(x, y):
     return z
 
 def show_feat_list(model, size=(1, 3, 224, 224)):
+    """Prints Feature List
+
+    Args:
+        model (torch model): pretrained model
+        size (tuple, optional): Size of one batch of data. Defaults to (1, 3, 224, 224).
+    """
     sample_inputs = torch.zeros(size)
     feat_list = model.extract_entire_features(sample_inputs)
     for i, feat in enumerate(feat_list, 0):
         print(i, feat.shape)
 
 def denormalize(img):
+    """Denormalized images
+
+    Args:
+        img (tensor): image tensor
+
+    Returns:
+        _type_: tensor
+    """
     mean = torch.tensor([0.485, 0.456, 0.406])
     std = torch.tensor([0.229, 0.224, 0.225])
     return img.mul_(std).add_(mean)    
@@ -118,10 +141,31 @@ def show_sample_images(dataloader, n, class_name):
     plt.show()
 
 def calc_covinv(embedding_vectors, H, W, C):
-      for i in range(H * W):
+    """Covariance inverse
+
+    Args:
+        embedding_vectors (tensor): Concatenated embedding vector
+        H (int): height
+        W (int): width
+        C (int): channels
+
+    Yields:
+        np array
+    """
+    for i in range(H * W):
         yield np.linalg.inv(np.cov(embedding_vectors[:, :, i].numpy(), rowvar=False) + 0.01 * np.identity(C))
 
 def plot_fig(test_img, scores, gts, threshold, save_dir, class_name):
+    """Figure plotter with image, ground truth, heatmap, predicted mask and segmentation result
+
+    Args:
+        test_img (np array): image
+        scores (np array): scores calculated using Mahalonobis distance
+        gts (np array): Ground Truth
+        threshold (int): threshold for AUROC
+        save_dir (str): save directory
+        class_name (str): class name
+    """
     num = len(scores)
     vmax = scores.max() * 255.
     vmin = scores.min() * 255.

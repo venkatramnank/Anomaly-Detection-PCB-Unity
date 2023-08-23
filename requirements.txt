@@ -1,0 +1,8 @@
+torch
+torchvision
+pillow==9.5.0
+tqdm
+scikit-learn
+matplotlib
+scikit-image
+efficientnet_pytorch
